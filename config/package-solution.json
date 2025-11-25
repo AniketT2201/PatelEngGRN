@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "patel-eng-client-side-solution",
+    "id": "44fffa8d-a353-4ce6-920d-32453394e158",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.19.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "PatelEng description"
+      },
+      "longDescription": {
+        "default": "PatelEng description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "patel-eng Feature",
+        "description": "The feature that activates elements of the patel-eng solution.",
+        "id": "de0e4c71-ddbb-41f0-b394-9b06e6db2333",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/patel-eng.sppkg"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "18.19.0",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.12.0"
+    },
+    "version": "1.19.0",
+    "libraryName": "patel-eng",
+    "libraryId": "44fffa8d-a353-4ce6-920d-32453394e158",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "PatelEng",
+    "solutionShortDescription": "PatelEng description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
