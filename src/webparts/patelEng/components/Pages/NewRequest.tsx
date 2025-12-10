@@ -13,7 +13,9 @@ import USESPCRUD, { ISPCRUD } from '../../service/BAL/SPCRUD/spcrud';
 import { IReasonMaster } from '../../service/INTERFACE/IReasonMaster';
 import ReasonRequestsOps from '../../service/BAL/SPCRUD/ReasonMaster';
 // import differenceInDays from 'date-fns/difference_in_days';
-import { BaseButton, Button, DatePicker, IPersonaProps } from 'office-ui-fabric-react';
+import { BaseButton, Button, IPersonaProps } from 'office-ui-fabric-react';
+import { DatePicker } from '@fluentui/react/lib/DatePicker';
+import { DayOfWeek } from '@fluentui/react';
 
 // import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
@@ -428,19 +430,71 @@ console.log(futureDate);
                 <div className='col-md-3'>
                   <label className='col-form-label'>Report date</label>
                   <div>
-                    <input type='date' id='txtreportdate' max={today} className='form-control'  {...getFieldProps(formik, 'ReportDate')}></input>
-                    {formik.errors.ReportDate ? (
-                      <div
-                        style={{
+                    <DatePicker
+                      id="txtReportDate"
+                      placeholder="Enter or select a date"
+                      allowTextInput={true}
+                      firstDayOfWeek={DayOfWeek.Sunday}
+                      value={formik.values.ReportDate ? new Date(formik.values.ReportDate) : undefined}
+                      onSelectDate={(date) => formik.setFieldValue('ReportDate', date?.toISOString())}
+                      // BLOCK non-numeric input
+                      onKeyDown={(e) => {
+                        const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
+                        if (!/[0-9\/]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      parseDateFromString={(input) => {
+                        const today = new Date();
+                        const parts = input.split(/[\/\-]/).map(p => p.trim()).filter(p => p !== "");
+            
+                        // Case 1: user typed only day
+                        if (parts.length === 1 && /^\d{1,2}$/.test(parts[0])) {
+                          const day = Number(parts[0]);
+                          return new Date(today.getFullYear(), today.getMonth(), day);
+                        }
+            
+                        // Case 2: user typed "day/month" 
+                        if (parts.length === 2 &&
+                            /^\d{1,2}$/.test(parts[0]) &&
+                            /^\d{1,2}$/.test(parts[1])) {
+            
+                          const day = Number(parts[0]);
+                          const month = Number(parts[1]);
+                          return new Date(today.getFullYear(), month - 1, day);  
+                        }
+            
+                        // Case 3: user typed full date 
+                        if (parts.length === 3) {
+                          let [day, month, year] = parts.map(Number);
+            
+                          // Fix missing/invalid year → default to current year
+                          if (!year || year < 100) {
+                            year = today.getFullYear();
+                          }
+            
+                          return new Date(year, month - 1, day);
+                        }
+            
+                        return undefined;
+                      }}
+                      formatDate={(date) =>
+                        date
+                        ? `${('0' + date.getDate()).slice(-2)}/${('0' + (date.getMonth() + 1)).slice(-2)}/${date.getFullYear()}`
+                        : ''
+                      }             
+                      styles={{ root: { width: '100%' } }}
+                    />
+                      {formik.errors.ReportDate && (
+                        <div style={{
                           paddingTop: 0,
                           color: "#B2484D",
                           fontSize: ".75rem",
                           fontFamily: "Segoe UI"
-                        }}
-                      >
-                        {JSON.stringify(formik.errors.ReportDate).replace(/"/g, '')}
-                      </div>
-                    ) : null}
+                          }}>
+                          {formik.errors.ReportDate}
+                        </div>
+                      )}
                   </div>
                 </div>
                 <br></br>
@@ -510,7 +564,19 @@ console.log(futureDate);
                 <div className='col-md-3'>
                   <label className='col-form-label'>MIR NO.</label>
                   <div>
-                    <input type='text' id='txtMIRNO' className='form-control'  {...getFieldProps(formik, 'MIRNO')}></input>
+                    <input type='text' id='txtMIRNO' className='form-control'  {...getFieldProps(formik, 'MIRNO')}
+                      onKeyDown={(e) => {
+                        const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+                        if (!/^[0-9]$/.test(e.key) && !allowed.includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onInput={(e) => {
+                        const input = e.target as HTMLInputElement;  
+                        input.value = input.value.replace(/\D+/g, "");
+                        formik.setFieldValue("MIRNO", input.value);
+                      }}
+                    ></input>
                     {formik.errors.MIRNO ? (
                       <div
                         style={{
@@ -530,24 +596,71 @@ console.log(futureDate);
                 <div className='col-md-3'>
                   <label className='col-form-label'>Recd Date</label>
                   <div>
-                    <input type='date' id='txtrecorddate' max={today} className='form-control'  {...getFieldProps(formik, 'RecordDate')}
-                      onChange={async (e) => {
-                        formik.setFieldValue('RecordDate', e.target.value);
-                        await onChangeDate(e, formik);
+                    <DatePicker
+                      id="txtsirdate"
+                      placeholder="Enter or select a date"
+                      allowTextInput={true}
+                      firstDayOfWeek={DayOfWeek.Sunday}
+                      value={formik.values.RecordDate ? new Date(formik.values.RecordDate) : undefined}
+                      onSelectDate={(date) => formik.setFieldValue('RecordDate', date?.toISOString())}
+                      // BLOCK non-numeric input
+                      onKeyDown={(e) => {
+                        const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
+                        if (!/[0-9\/]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                          e.preventDefault();
+                        }
                       }}
-                    ></input>
-                    {formik.errors.RecordDate ? (
-                      <div
-                        style={{
-                          paddingTop: 0,
-                          color: "#B2484D",
-                          fontSize: ".75rem",
-                          fontFamily: "Segoe UI"
-                        }}
-                      >
-                        {JSON.stringify(formik.errors.RecordDate).replace(/"/g, '')}
+                      parseDateFromString={(input) => {
+                        const today = new Date();
+                        const parts = input.split(/[\/\-]/).map(p => p.trim()).filter(p => p !== "");
+
+                        // Case 1: user typed only day
+                        if (parts.length === 1 && /^\d{1,2}$/.test(parts[0])) {
+                          const day = Number(parts[0]);
+                          return new Date(today.getFullYear(), today.getMonth(), day);
+                        }
+
+                        // Case 2: user typed "day/month" 
+                        if (parts.length === 2 &&
+                            /^\d{1,2}$/.test(parts[0]) &&
+                            /^\d{1,2}$/.test(parts[1])) {
+
+                          const day = Number(parts[0]);
+                          const month = Number(parts[1]);
+                          return new Date(today.getFullYear(), month - 1, day);  
+                        }
+
+                        // Case 3: user typed full date 
+                        if (parts.length === 3) {
+                          let [day, month, year] = parts.map(Number);
+
+                          // Fix missing/invalid year → default to current year
+                          if (!year || year < 100) {
+                            year = today.getFullYear();
+                          }
+
+                          return new Date(year, month - 1, day);
+                        }
+
+                        return undefined;
+                      }}
+                      formatDate={(date) =>
+                        date
+                          ? `${('0' + date.getDate()).slice(-2)}/${('0' + (date.getMonth() + 1)).slice(-2)}/${date.getFullYear()}`
+                          : ''
+                      }
+                      styles={{ root: { width: '100%' } }}
+                    />
+                    {formik.errors.RecordDate && (
+                      <div style={{
+                        paddingTop: 0,
+                        color: "#B2484D",
+                        fontSize: ".75rem",
+                        fontFamily: "Segoe UI"
+                      }}>
+                        {formik.errors.RecordDate}
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 </div>
                 <br></br>
@@ -571,9 +684,21 @@ console.log(futureDate);
                   </div>
                 </div>
                 <div className='col-md-3'>
-                  <label className='col-form-label'>Invoice/Challan No </label>
+                  <label className='col-form-label'>From invoice and challan No </label>
                   <div>
-                    <input type='text' id='txtInvoiceNo' className='form-control'  {...getFieldProps(formik, 'InvoiceNo')}></input>
+                    <input type='text' id='txtInvoiceNo' className='form-control'  {...getFieldProps(formik, 'InvoiceNo')}
+                      onKeyDown={(e) => {
+                        const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+                        if (!/^[0-9]$/.test(e.key) && !allowed.includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onInput={(e) => {
+                        const input = e.target as HTMLInputElement;  
+                        input.value = input.value.replace(/\D+/g, "");
+                        formik.setFieldValue("InvoiceNo", input.value);
+                      }}
+                    ></input>
                     {formik.errors.InvoiceNo ? (
                       <div
                         style={{
@@ -595,19 +720,71 @@ console.log(futureDate);
                 <div className='col-md-3'>
                   <label className='col-form-label'>Invoice Date</label>
                   <div>
-                    <input type='date' id='txtinvoicedate' max={today} className='form-control'  {...getFieldProps(formik, 'InvoiceDate')}></input>
-                    {formik.errors.InvoiceDate ? (
-                      <div
-                        style={{
-                          paddingTop: 0,
-                          color: "#B2484D",
-                          fontSize: ".75rem",
-                          fontFamily: "Segoe UI"
-                        }}
-                      >
-                        {JSON.stringify(formik.errors.InvoiceDate).replace(/"/g, '')}
+                    <DatePicker
+                      id="txtsirdate"
+                      placeholder="Enter or select a date"
+                      allowTextInput={true}
+                      firstDayOfWeek={DayOfWeek.Sunday}
+                      value={formik.values.InvoiceDate  ? new Date(formik.values.InvoiceDate) : undefined}
+                      onSelectDate={(date) => formik.setFieldValue('InvoiceDate', date?.toISOString())}
+                      // BLOCK non-numeric input
+                      onKeyDown={(e) => {
+                        const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
+                        if (!/[0-9\/]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      parseDateFromString={(input) => {
+                        const today = new Date();
+                        const parts = input.split(/[\/\-]/).map(p => p.trim()).filter(p => p !== "");
+
+                        // Case 1: user typed only day
+                        if (parts.length === 1 && /^\d{1,2}$/.test(parts[0])) {
+                          const day = Number(parts[0]);
+                          return new Date(today.getFullYear(), today.getMonth(), day);
+                        }
+
+                        // Case 2: user typed "day/month" 
+                        if (parts.length === 2 &&
+                            /^\d{1,2}$/.test(parts[0]) &&
+                            /^\d{1,2}$/.test(parts[1])) {
+
+                          const day = Number(parts[0]);
+                          const month = Number(parts[1]);
+                          return new Date(today.getFullYear(), month - 1, day);  
+                        }
+
+                        // Case 3: user typed full date 
+                        if (parts.length === 3) {
+                          let [day, month, year] = parts.map(Number);
+
+                          // Fix missing/invalid year → default to current year
+                          if (!year || year < 100) {
+                            year = today.getFullYear();
+                          }
+
+                          return new Date(year, month - 1, day);
+                        }
+
+                        return undefined;
+                      }}
+                      formatDate={(date) =>
+                        date
+                          ? `${('0' + date.getDate()).slice(-2)}/${('0' + (date.getMonth() + 1)).slice(-2)}/${date.getFullYear()}`
+                          : ''
+                      }
+                      styles={{ root: { width: '100%' } }}
+                    />
+                    {formik.errors.InvoiceDate && (
+                      <div style={{
+                        paddingTop: 0,
+                        color: "#B2484D",
+                        fontSize: ".75rem",
+                        fontFamily: "Segoe UI"
+                      }}>
+                        {formik.errors.InvoiceDate}
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 </div>
                 <br></br>
@@ -635,7 +812,19 @@ console.log(futureDate);
                 <div className='col-md-3'>
                   <label className='col-form-label'>P.O. No</label>
                   <div>
-                    <input type='text' id='txtPONO' className='form-control'  {...getFieldProps(formik, 'PONo')}></input>
+                    <input type='text' id='txtPONO' className='form-control'  {...getFieldProps(formik, 'PONo')}
+                      onKeyDown={(e) => {
+                        const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+                        if (!/^[0-9]$/.test(e.key) && !allowed.includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onInput={(e) => {
+                        const input = e.target as HTMLInputElement;  
+                        input.value = input.value.replace(/\D+/g, "");
+                        formik.setFieldValue("PONo", input.value);
+                      }}
+                    ></input>
                     {formik.errors.PONo ? (
                       <div
                         style={{
@@ -653,7 +842,19 @@ console.log(futureDate);
                 <div className='col-md-3'>
                   <label className='col-form-label'>Invoice Value (Including Tax) </label>
                   <div>
-                    <input type='number' id='txtinvoicetax' className='form-control'  {...getFieldProps(formik, 'invoicetaxnumber')}></input>
+                    <input type='number' id='txtinvoicetax' className='form-control'  {...getFieldProps(formik, 'invoicetaxnumber')}
+                      onKeyDown={(e) => {
+                        const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+                        if (!/^[0-9]$/.test(e.key) && !allowed.includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onInput={(e) => {
+                        const input = e.target as HTMLInputElement;  
+                        input.value = input.value.replace(/\D+/g, "");
+                        formik.setFieldValue("invoicetaxnumber", input.value);
+                      }}
+                    ></input>
                     {formik.errors.invoicetaxnumber ? (
                       <div
                         style={{

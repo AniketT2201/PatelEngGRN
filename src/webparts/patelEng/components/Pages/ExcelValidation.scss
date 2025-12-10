@@ -1,0 +1,168 @@
+/* -----------------------------
+   General Page Layout
+--------------------------------*/
+.excel-wrapper {
+  width: 60%;
+  margin: 30px auto;
+  padding: 20px 30px;
+  background-color: #fff;
+  border: 2px solid #d32f2f; /* dark red border for a professional accent */
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+/* -----------------------------
+   Headings
+--------------------------------*/
+.excel-wrapper h2 {
+  color: #d32f2f;
+  margin-bottom: 20px;
+  font-size: 28px;
+  text-align: center;
+}
+
+.excel-wrapper h4 {
+  color: #d32f2f;
+  margin-top: 30px;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+/* -----------------------------
+   Buttons
+--------------------------------*/
+.excel-wrapper button {
+  background-color: #d32f2f;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  margin: 10px 5px 20px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.excel-wrapper button:hover {
+  background-color: #b71c1c; /* slightly darker red on hover */
+}
+
+.excel-wrapper button:disabled {
+  background-color: #f5c6cb;
+  cursor: not-allowed;
+  color: #fff;
+}
+
+/* -----------------------------
+   File Input
+--------------------------------*/
+.excel-wrapper input[type="file"] {
+  padding: 5px;
+  font-size: 14px;
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+/* -----------------------------
+   Master Data Status
+--------------------------------*/
+.excel-wrapper div[style*="Masters Loaded"],
+.excel-wrapper div[style*="Loading masters"] {
+  font-weight: bold;
+  margin-bottom: 15px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.excel-wrapper div[style*="Masters Loaded"] {
+  background-color: #e8f5e9; /* light green for loaded */
+  color: #2e7d32;
+}
+
+.excel-wrapper div[style*="Loading masters"] {
+  background-color: #fff3e0; /* light yellow/orange for loading */
+  color: #f57c00;
+}
+
+/* -----------------------------
+   Validation Errors
+--------------------------------*/
+.error-box {
+  background-color: #ffebee;
+  border: 1px solid #d32f2f;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.error-box strong {
+  color: #b71c1c;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.error-box div {
+  margin-bottom: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* -----------------------------
+   Excel Table Preview
+--------------------------------*/
+.excel-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #d32f2f;
+  border-radius: 5px;
+}
+
+.excel-table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.excel-table-wrapper th,
+.excel-table-wrapper td {
+  padding: 8px 10px;
+  border: 1px solid #d32f2f;
+  text-align: left;
+}
+
+.excel-table-wrapper th {
+  background-color: #d32f2f;
+  color: #fff;
+  font-weight: bold;
+}
+
+.excel-table-wrapper tr:nth-child(even) {
+  background-color: #fff5f5;
+}
+
+.excel-table-wrapper tr:hover {
+  background-color: #ffebee;
+}
+
+/* -----------------------------
+   Responsive
+--------------------------------*/
+@media (max-width: 768px) {
+  .excel-wrapper {
+    padding: 15px 20px;
+  }
+
+  .excel-wrapper h2 {
+    font-size: 24px;
+  }
+
+  .excel-wrapper button {
+    width: 100%;
+    margin: 10px 0;
+  }
+}

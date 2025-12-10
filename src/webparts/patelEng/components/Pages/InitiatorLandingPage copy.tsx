@@ -455,8 +455,8 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                         onBlur={ev => onBlockRequestSearch(ev.target.value)} />
                     </Stack>
                   </div>
+                  
                 
-                    
                     
                     
                     

@@ -43,8 +43,12 @@ import ReasonRequestsOps from '../../service/BAL/SPCRUD/ReasonMaster';
 // import { ISPCRUDOPS } from "../../services/DAL/spcrudops";
 import { Label } from '@fluentui/react/lib/Label';
 import styles from '../PatelEng.module.scss';
+import Select from "react-select";
 import { HttpClient, HttpClientResponse } from '@microsoft/sp-http';
 import './Landing.scss';
+//Date
+import { DatePicker } from '@fluentui/react/lib/DatePicker';
+import { DayOfWeek } from '@fluentui/react';
 
 //import ISPCRUDOPS from "../../service/DAL/spcrudops"
 // import { Link, useHistory } from 'react-router-dom';
@@ -73,6 +77,10 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
   const [pageCount, setPageCount] = useState(0);
   const [itemOffset, setItemOffset] = useState(0);
   const [selectedStatus, setSelectedStatus] = React.useState<string>();
+  const plantOptions = (plantMasterCollData ?? []).map((p) => ({
+    value: String(p.Id),
+    label: p.PlantCode
+  }));
   // let spCrudObj: ISPCRUD;
 
   // const [Columns, setCoulmns] = React.useState<IColumn[]>();
@@ -345,7 +353,10 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
   }
 
   const initialvalues = {
-    Response: ''
+    Response: '',
+    Enddate:'',
+    Fromdate:'',
+    PlantCode: []
   };
 
   const headers = [
@@ -393,13 +404,121 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                     {<><div className='col-md-3'>
                       <div className='form-group'>
                         <label className='col-form-label mr-2'>From date</label>
-                        <input type='date' id='txtstartdate' className='form-control' {...getFieldProps(formik, 'Fromdate')} />
+                        <DatePicker
+                          id="txtstartdate"
+                          placeholder="Enter or select a date"
+                          allowTextInput={true}
+                          firstDayOfWeek={DayOfWeek.Sunday}
+                          value={formik.values.Fromdate ? new Date(formik.values.Fromdate) : undefined}
+                          onSelectDate={(date) => formik.setFieldValue('Fromdate', date?.toISOString())}
+                          // BLOCK non-numeric input
+                          onKeyDown={(e) => {
+                            const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
+                            if (!/[0-9\/]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          parseDateFromString={(input) => {
+                            const today = new Date();
+                            const parts = input.split(/[\/\-]/).map(p => p.trim()).filter(p => p !== "");
+
+                            // Case 1: user typed only day
+                            if (parts.length === 1 && /^\d{1,2}$/.test(parts[0])) {
+                              const day = Number(parts[0]);
+                              return new Date(today.getFullYear(), today.getMonth(), day);
+                            }
+
+                            // Case 2: user typed "day/month" 
+                            if (parts.length === 2 &&
+                                /^\d{1,2}$/.test(parts[0]) &&
+                                /^\d{1,2}$/.test(parts[1])) {
+
+                              const day = Number(parts[0]);
+                              const month = Number(parts[1]);
+                              return new Date(today.getFullYear(), month - 1, day);  
+                            }
+
+                            // Case 3: user typed full date 
+                            if (parts.length === 3) {
+                              let [day, month, year] = parts.map(Number);
+
+                              // Fix missing/invalid year → default to current year
+                              if (!year || year < 100) {
+                                year = today.getFullYear();
+                              }
+
+                              return new Date(year, month - 1, day);
+                            }
+
+                            return undefined;
+                          }}
+                          formatDate={(date) =>
+                            date
+                              ? `${('0' + date.getDate()).slice(-2)}/${('0' + (date.getMonth() + 1)).slice(-2)}/${date.getFullYear()}`
+                              : ''
+                          }
+                          styles={{ root: { width: '100%' } }}
+                        />
                       </div>
                     </div>
                       <div className='col-md-3'>
                         <div className='form-group'>
                           <label className='col-form-label mr-2'>End date</label>
-                          <input type='date' id='txtenddate' className='form-control' {...getFieldProps(formik, 'Enddate')} />
+                          <DatePicker
+                            id="txtenddate"
+                            placeholder="Enter or select a date"
+                            allowTextInput={true}
+                            firstDayOfWeek={DayOfWeek.Sunday}
+                            value={formik.values.Enddate ? new Date(formik.values.Enddate) : undefined}
+                            onSelectDate={(date) => formik.setFieldValue('Enddate', date?.toISOString())}
+                            // BLOCK non-numeric input
+                            onKeyDown={(e) => {
+                              const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
+                              if (!/[0-9\/]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            parseDateFromString={(input) => {
+                              const today = new Date();
+                              const parts = input.split(/[\/\-]/).map(p => p.trim()).filter(p => p !== "");
+
+                              // Case 1: user typed only day
+                              if (parts.length === 1 && /^\d{1,2}$/.test(parts[0])) {
+                                const day = Number(parts[0]);
+                                return new Date(today.getFullYear(), today.getMonth(), day);
+                              }
+
+                              // Case 2: user typed "day/month" 
+                              if (parts.length === 2 &&
+                                  /^\d{1,2}$/.test(parts[0]) &&
+                                  /^\d{1,2}$/.test(parts[1])) {
+
+                                const day = Number(parts[0]);
+                                const month = Number(parts[1]);
+                                return new Date(today.getFullYear(), month - 1, day);  
+                              }
+
+                              // Case 3: user typed full date 
+                              if (parts.length === 3) {
+                                let [day, month, year] = parts.map(Number);
+
+                                // Fix missing/invalid year → default to current year
+                                if (!year || year < 100) {
+                                  year = today.getFullYear();
+                                }
+
+                                return new Date(year, month - 1, day);
+                              }
+
+                              return undefined;
+                            }}
+                            formatDate={(date) =>
+                              date
+                                ? `${('0' + date.getDate()).slice(-2)}/${('0' + (date.getMonth() + 1)).slice(-2)}/${date.getFullYear()}`
+                                : ''
+                            }
+                            styles={{ root: { width: '100%' } }}
+                          />
                         </div>
                       </div>
 
@@ -418,17 +537,20 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                       <div className='col-md-3'>
                         <div className='form-group'>
                           <label className='col-form-label mr-2'>Plant Code</label>
-                          <select id='ddlPlantCode' className='form-control' {...getFieldProps(formik, 'PlantCodeId')} onChange={async (e) => {
-                            // changed3 = e.target.value;
-
-                            formik.setFieldValue('PlantCodeId', e.target.value);
-                            await onChangePlantCode(e, formik);
-                            //formik.handleChange("PlantCodeId");
-                          }}>
-                            <option value="">Select</option>
-                            {plantMasterCollData !== undefined ? plantMasterCollData.map((Vend) => <option key={Vend.Id} value={Vend.Id}>{Vend.PlantCode}</option>) : ''}
-
-                          </select>                        </div>
+                          <Select
+                            options={plantOptions}
+                            className={"plantCodeFromControl"}
+                            isMulti                      
+                            value={plantOptions.filter(opt =>
+                              formik.values.PlantCode.includes(opt.value)
+                            )}
+                            onChange={(selected) => {
+                              const values = selected ? selected.map(s => String(s.value)) : [];
+                              formik.setFieldValue("PlantCode", values);
+                            
+                            }}
+                          />
+                        </div>
                       </div>
                       <div className='col-md-3'>
                         <div className='form-group' style={{ marginTop: '-10px' }}>
@@ -445,7 +567,8 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                           >
                             <option value="">Select</option>
                             {ReasonCollData !== undefined ? ReasonCollData.map((Vend) => <option key={Vend.Id} value={Vend.Id}>{Vend.Reason}</option>) : ''}
-                          </select>                        </div>
+                          </select>  
+                        </div>
                       </div>
 
                       <div className='col-md-3 mt--4'>
@@ -498,6 +621,11 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                           onBlur={ev => onBlockRequestSearch(ev.target.value)} />
                       </Stack>
                     </div>
+                    <div className="col-md-2" style={{textAlign:'left', fontSize: "13px" , marginTop:'3px'}}>
+                      <div className="excel" onClick={() => history.push("/GRNExcelUploadForm")} style={{border: '1px solid #c4291c',padding: "5px",width:'calc(100% - 40px)',backgroundColor:'#c4291c',borderRadius:'3px',height:'35px', textAlign:'center'}}>
+                        <Icon iconName="ExcelDocument" style={{color:'white'}}/> <span className='pl-2'style={{color:'#fff', paddingLeft:'7px'}}>Excel Validation</span>
+                      </div>
+                    </div>
 
 
 
@@ -516,7 +644,7 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                           <th>MIR No</th>
                           <th>Recd Date</th>
                           <th>Supplier Name </th>
-                          <th>Invoice/Challan No</th>
+                          <th>Invoice and Challan No</th>
                           <th>Invoice Date</th>
                           <th>Description </th>
                           <th>P.O. NO</th>
@@ -539,7 +667,7 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                       <tbody>
 
 
-                        {paginatedPurchaseRequestsColl != undefined ? paginatedPurchaseRequestsColl.sort((a, b) => b.Id - a.Id).map((purchaseReqObj) =>
+                        {paginatedPurchaseRequestsColl != undefined ? paginatedPurchaseRequestsColl.sort((a, b) => b.ReportDate - a.ReportDate).map((purchaseReqObj) =>
                           <tr>
                             <td style={{ textAlign: 'center' }}>
                               {

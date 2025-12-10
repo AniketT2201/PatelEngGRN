@@ -1,5 +1,4 @@
 export interface IPendingGRN {
-    //PlantCode :any;
     PlantCode: any;
     ReportDate :any;
     ProjectName:any;
@@ -29,4 +28,5 @@ export interface IPendingGRN {
     Modified:any;
     NameActiontobetakenbyId:any;
     //GroupApprover:any;
-    GroupApproverId:any;}
+    GroupApproverId:any;
+}
