@@ -493,7 +493,7 @@ export const EditRequest: React.FunctionComponent<IPatelEngProps> = (props: IPat
                     formik.setFieldValue('InvoiceDate', workrequestColl[0]?.InvoiceDate.split('T')[0]);
                   }
                   if (workrequestColl && workrequestColl[0]?.RecdDate) {
-                                                          // <td>{moment(new Date(purchaseReqObj.RecdDate)).format('DD/MM/YYYY')}</td>
+                    // <td>{moment(new Date(purchaseReqObj.RecdDate)).format('DD/MM/YYYY')}</td>
                     
                     formik.setFieldValue('RecordDate', workrequestColl[0]?.RecdDate.split('T')[0]);
                     //formik.setFieldValue('RecordDate',moment(new Date(workrequestColl[0].RecdDate)).format('DD/MM/YYYY'))

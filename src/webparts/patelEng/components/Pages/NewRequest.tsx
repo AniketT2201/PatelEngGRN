@@ -31,11 +31,25 @@ import { sp, IFolders, Folders } from "@pnp/sp/presets/all";
 import * as yup from 'yup';
 import styles from '../PatelEng.module.scss';
 import { Dropdown, DropdownMenuItemType, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
+import { useFormikContext } from "formik";
 
 import { TextField, MaskedTextField } from '@fluentui/react/lib/TextField';
-import { DefaultButton, PrimaryButton } from '@fluentui/react/lib/Button';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import {
+  DetailsList,
+  DetailsListLayoutMode,
+  IColumn,
+  IconButton,
+  PrimaryButton,
+  DefaultButton,
+  Stack,
+  MessageBar,
+  MessageBarType,
+  Selection, 
+  SelectionMode
+} from "@fluentui/react";
 const MRI: IDropdownOption[] = [
   { key: 'Yes', text: 'Yes' },
   { key: 'No', text: 'No' },
@@ -50,6 +64,12 @@ export const NewRequest: React.FunctionComponent<IPatelEngProps> = (props: IPate
 
   const [testBrand, setBrandText] = React.useState<string[]>([]);
   const [user, setUser] = React.useState<IPersonaProps[]>();
+  const [gridData, setGridData] = useState<any[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [peoplePickerKey, setPeoplePickerKey] = useState(0);
+
 
   const [currentDate] = useState(getDate());
   let spCrudObj: ISPCRUD;
@@ -79,88 +99,300 @@ export const NewRequest: React.FunctionComponent<IPatelEngProps> = (props: IPate
 
   }
 
-  async function onRequestInitiate(formValues: any) {
-    spCrudObj = await USESPCRUD();
-    setSPCRUD(spCrudObj);
-    let date = new Date();
-date.setDate(date.getDate() + 1);
+  // Selection for Grid
+  const selection = React.useRef(
+    new Selection({
+      onSelectionChanged: () => {
+        const selected = selection.current.getSelection() as any[];
+        setSelectedItems(selected);
+      }
+    })
+  );
 
-// Format the date as YYYY-MM-DD
-let futureDate = date.toISOString().split('T')[0];
-console.log(futureDate);
-    if(formValues.ReportDate >= futureDate){
-      alert ("Future date not allowed in the Report Date field")
-      return false
-    }
-    if(formValues.RecordDate >= futureDate){
-      alert ("Future date not allowed in the Received Date field")
-      return false
-    }
-    if(formValues.InvoiceDate >= futureDate){
-      alert ("Future date not allowed in the Invoice Date field")
-      return false
-    }
+//   async function onRequestInitiate(formValues: any) {
+//     spCrudObj = await USESPCRUD();
+//     setSPCRUD(spCrudObj);
+//     let date = new Date();
+// date.setDate(date.getDate() + 1);
+
+// // Format the date as YYYY-MM-DD
+// let futureDate = date.toISOString().split('T')[0];
+// console.log(futureDate);
+//     if(formValues.ReportDate >= futureDate){
+//       alert ("Future date not allowed in the Report Date field")
+//       return false
+//     }
+//     if(formValues.RecordDate >= futureDate){
+//       alert ("Future date not allowed in the Received Date field")
+//       return false
+//     }
+//     if(formValues.InvoiceDate >= futureDate){
+//       alert ("Future date not allowed in the Invoice Date field")
+//       return false
+//     }
    
-    let onBehalf = 0;
-    let onBehalfEmail = "";
-    if (user === undefined) {
-      onBehalf = 0;
-      const reportingManagerEmail = props.currentSPContext.pageContext.legacyPageContext.userEmail;
-    }
-    else {
-      onBehalf = parseInt(user[0].id);
-      //let email=user[0].secondaryText;
-      const reportingManagerEmail = user[0].secondaryText;
+//     let onBehalf = 0;
+//     let onBehalfEmail = "";
+//     if (user === undefined) {
+//       onBehalf = 0;
+//       const reportingManagerEmail = props.currentSPContext.pageContext.legacyPageContext.userEmail;
+//     }
+//     else {
+//       onBehalf = parseInt(user[0].id);
+//       //let email=user[0].secondaryText;
+//       const reportingManagerEmail = user[0].secondaryText;
 
-    }
-  //   var peoplePickerData = formValues.GroupApproverId.map(function (item.Id) {
-  //     return {
-  //         "Key": item.Id.toString(), // ID as a string
-  //         "Value": item.Title         // Display Name
-  //     };
-  // });
-  let useval=formValues.GroupApproverId.map(item => item.Id);
+//     }
+//   //   var peoplePickerData = formValues.GroupApproverId.map(function (item.Id) {
+//   //     return {
+//   //         "Key": item.Id.toString(), // ID as a string
+//   //         "Value": item.Title         // Display Name
+//   //     };
+//   // });
+//   let useval=formValues.GroupApproverId.map(item => item.Id);
 
-    let PRRequest: any = {
-      //InitiatorNameId: item.InitiatorNameId,
-      'ReportDate': formValues.ReportDate
-      // , 'PlantCodeId': SelectPlantName[0].Id
-      , 'PlantCodeId': formValues.PlantCodeId
+//     let PRRequest: any = {
+//       //InitiatorNameId: item.InitiatorNameId,
+//       'ReportDate': formValues.ReportDate
+//       // , 'PlantCodeId': SelectPlantName[0].Id
+//       , 'PlantCodeId': formValues.PlantCodeId
 
-      , 'ProjectName': formValues.ProjectName
-      , 'Location': formValues.Location
-      , 'MIRNO': '' + formValues.MIRNO
-      , 'RecdDate': formValues.RecordDate
-      , 'SupplierName': '' + formValues.SupplierName
-      , 'InvoiceChallanNo': '' + formValues.InvoiceNo
-      , 'InvoiceDate': formValues.InvoiceDate
-      , 'Description': '' + formValues.Descripition
-      , 'PONo': '' + formValues.PONo
-      , 'InvoiceValueIncludingTax': '' + formValues.invoicetaxnumber
-      , 'DetailedReason': '' + formValues.DetailedReason
-      , 'Nosofpendingdays': '' + formValues.NofoPendingdays
-      , 'ManualMIRdone': formValues.MRIManual
-      , 'ReasonforPendingId': formValues.PendingReasonId
-      , 'Remarks': formValues.Remark
-      , 'NameActiontobetakenbyId': onBehalf
-      //,"GroupApproverId":{result:SelectPlantName[0].GroupApprover}GroupApproverId
-      //,"GroupApproverId":{GroupApproverId}
-      ,"GroupApproverId": { "results": useval}
+//       , 'ProjectName': formValues.ProjectName
+//       , 'Location': formValues.Location
+//       , 'MIRNO': '' + formValues.MIRNO
+//       , 'RecdDate': formValues.RecordDate
+//       , 'SupplierName': '' + formValues.SupplierName
+//       , 'InvoiceChallanNo': '' + formValues.InvoiceNo
+//       , 'InvoiceDate': formValues.InvoiceDate
+//       , 'Description': '' + formValues.Descripition
+//       , 'PONo': '' + formValues.PONo
+//       , 'InvoiceValueIncludingTax': '' + formValues.invoicetaxnumber
+//       , 'DetailedReason': '' + formValues.DetailedReason
+//       , 'Nosofpendingdays': '' + formValues.NofoPendingdays
+//       , 'ManualMIRdone': formValues.MRIManual
+//       , 'ReasonforPendingId': formValues.PendingReasonId
+//       , 'Remarks': formValues.Remark
+//       , 'NameActiontobetakenbyId': onBehalf
+//       //,"GroupApproverId":{result:SelectPlantName[0].GroupApprover}GroupApproverId
+//       //,"GroupApproverId":{GroupApproverId}
+//       ,"GroupApproverId": { "results": useval}
 
-    };
+//     };
 
-    console.log(formValues);
-    console.log(PRRequest);
-    //return false;
+//     console.log(formValues);
+//     console.log(PRRequest);
+//     //return false;
 
-    await spCrudObj.insertData("PendingGRN", PRRequest, props).then(async (brrInsertResult) => {
-      alert("Pending GRN details submitted successfully")
-      history.push('/InitiatorLanding');
+//     await spCrudObj.insertData("PendingGRN", PRRequest, props).then(async (brrInsertResult) => {
+//       alert("Pending GRN details submitted successfully")
+//       history.push('/InitiatorLanding');
 
 
-    });
+//     });
 
+//   }
+
+  // Function to add formdata into grid
+  const addToGrid = async (formValues: any, formik: any) => {
+  setErrorMsg("");
+
+  // ---------- Date validation ----------
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  const futureDate = date.toISOString().split("T")[0];
+
+  if (formValues.ReportDate >= futureDate) {
+    setErrorMsg("Future date not allowed in the Report Date field");
+    return;
   }
+  if (formValues.RecordDate >= futureDate) {
+    setErrorMsg("Future date not allowed in the Received Date field");
+    return;
+  }
+  if (formValues.InvoiceDate >= futureDate) {
+    setErrorMsg("Future date not allowed in the Invoice Date field");
+    return;
+  }
+
+  // ---------- People picker approvers ----------
+  if (!formValues.GroupApproverId || formValues.GroupApproverId.length === 0) {
+    setErrorMsg("Please select at least one approver.");
+    return;
+  }
+
+  const GroupIds = formValues.GroupApproverId.map((item: any) => item.Id);
+
+  // ---------- On behalf ----------
+  let onBehalf = 0;
+  if (user !== undefined) {
+    onBehalf = parseInt(user[0].id);
+  }
+
+  // ---------- Add row ----------
+  const row: any = {
+    ReportDate: formValues.ReportDate,
+    PlantCodeId: parseInt(formValues.PlantCodeId),
+    ProjectName: formValues.ProjectName,
+    Location: formValues.Location,
+
+    MIRNO: formValues.MIRNO,
+    RecdDate: formValues.RecordDate,
+    SupplierName: formValues.SupplierName,
+    InvoiceChallanNo: formValues.InvoiceNo,
+    InvoiceDate: formValues.InvoiceDate,
+    Description: formValues.Descripition,
+    PONo: formValues.PONo,
+    InvoiceValueIncludingTax: formValues.invoicetaxnumber,
+    DetailedReason: formValues.DetailedReason,
+    Nosofpendingdays: formValues.NofoPendingdays,
+    ManualMIRdone: formValues.MRIManual,
+    ReasonforPendingId: formValues.PendingReasonId,
+    Remarks: formValues.Remark,
+
+    NameActiontobetakenbyId: onBehalf,
+    GroupIds
+  };
+
+  setGridData(prev => [...prev, row]);
+  formik.resetForm();
+  setUser([]);
+  setPeoplePickerKey(k => k + 1);
+};
+
+
+  // Delete row from grid
+  const deleteRow = (index: number) => {
+    const updated = [...gridData];
+    updated.splice(index, 1);
+    setGridData(updated);
+  };
+
+  // Create columns for all grid entries
+  const columns: IColumn[] = [
+  { key: "reportDate", name: "Report Date", fieldName: "ReportDate", minWidth: 100 },
+  { key: "plantCode", name: "Plant Code", fieldName: "PlantCodeId", minWidth: 90 },
+  { key: "project", name: "Project Name", fieldName: "ProjectName", minWidth: 130 },
+  { key: "location", name: "Location", fieldName: "Location", minWidth: 120 },
+
+  { key: "mirNo", name: "MIR No", fieldName: "MIRNO", minWidth: 120 },
+  { key: "recdDate", name: "Received Date", fieldName: "RecdDate", minWidth: 120 },
+  { key: "supplier", name: "Supplier Name", fieldName: "SupplierName", minWidth: 160 },
+  { key: "invoiceNo", name: "Invoice / Challan No", fieldName: "InvoiceChallanNo", minWidth: 170 },
+  { key: "invoiceDate", name: "Invoice Date", fieldName: "InvoiceDate", minWidth: 120 },
+
+  { key: "desc", name: "Description", fieldName: "Description", minWidth: 220 },
+  { key: "poNo", name: "PO No", fieldName: "PONo", minWidth: 120 },
+  {
+    key: "invoiceValue",
+    name: "Invoice Value (Incl. Tax)",
+    fieldName: "InvoiceValueIncludingTax",
+    minWidth: 190
+  },
+  {
+    key: "detailedReason",
+    name: "Detailed Reason",
+    fieldName: "DetailedReason",
+    minWidth: 220
+  },
+  {
+    key: "pendingDays",
+    name: "No. of Pending Days",
+    fieldName: "Nosofpendingdays",
+    minWidth: 160
+  },
+  {
+    key: "manualMir",
+    name: "Manual MIR Done",
+    fieldName: "ManualMIRdone",
+    minWidth: 150
+  },
+  {
+    key: "pendingReason",
+    name: "Reason for Pending",
+    fieldName: "ReasonforPendingId",
+    minWidth: 180
+  },
+  { key: "remarks", name: "Remarks", fieldName: "Remarks", minWidth: 180 },
+
+  {
+    key: "action",
+    name: "Action",
+    minWidth: 60,
+    onRender: (_item, index) => (
+      <IconButton
+        iconProps={{ iconName: "Delete" }}
+        title="Delete"
+        ariaLabel="Delete"
+        styles={{
+          root: { color: "#a4262c", width: "fit-content", alignSelf: "center" },
+          rootHovered: { color: "#750b1c" }
+        }}
+        onClick={() => deleteRow(index!)}
+      />
+    )
+  }
+];
+
+
+
+  // Submit all grid data to SharePoint List
+  const submitAll = async () => {
+  if (selectedItems.length === 0) {
+    setErrorMsg("Please select at least one record to submit.");
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const spCrudObj = await USESPCRUD();
+
+    for (const item of selectedItems) {
+      const payload = {
+        ReportDate: item.ReportDate,
+        PlantCodeId: item.PlantCodeId,
+        ProjectName: item.ProjectName,
+        Location: item.Location,
+
+        MIRNO: "" + item.MIRNO,
+        RecdDate: item.RecdDate,
+        SupplierName: "" + item.SupplierName,
+        InvoiceChallanNo: "" + item.InvoiceChallanNo,
+        InvoiceDate: item.InvoiceDate,
+        Description: "" + item.Description,
+        PONo: "" + item.PONo,
+        InvoiceValueIncludingTax: "" + item.InvoiceValueIncludingTax,
+        DetailedReason: "" + item.DetailedReason,
+        Nosofpendingdays: "" + item.Nosofpendingdays,
+        ManualMIRdone: item.ManualMIRdone,
+        ReasonforPendingId: item.ReasonforPendingId,
+        Remarks: item.Remarks,
+
+        NameActiontobetakenbyId: item.NameActiontobetakenbyId,
+        GroupApproverId: { results: item.GroupIds }
+      };
+
+      await spCrudObj.insertData("PendingGRN", payload, props);
+    }
+
+    const count = selectedItems.length;
+    alert(
+      count === 1
+        ? "1 Pending GRN record submitted successfully."
+        : `${count} Pending GRN records submitted successfully.`
+    );
+
+    setGridData([]);
+    history.push("/InitiatorLanding");
+
+  } catch (error) {
+    console.error(error);
+    setErrorMsg("Error occurred while submitting Pending GRN data.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
 
   const validate = yup.object().shape({
@@ -338,6 +570,8 @@ console.log(futureDate);
     PlantCodeId: '',
     MIRNO: '',
     RecordDate: '',
+    ProjectName: '',
+    Location: '',
     SupplierName: '',
     InvoiceNo: '',
     InvoiceDate: '',
@@ -348,9 +582,9 @@ console.log(futureDate);
     NofoPendingdays: '',
     MRIManual: '',
     PendingReasonId: '',
-    //Remark: '',
-    NameOfAction:[]
-    // setUser:''
+    Remark: '',
+    NameOfAction:[],
+    setUser:''
 
 
   };
@@ -378,17 +612,19 @@ console.log(futureDate);
 
   }
 
-  function onChangeDate(e, formik) {
-    let date = new Date(e.target.value);
-    let todaydate = new Date();
-    const startDateObj = new Date(date);
+  function onChangeDate(selectedDate, formik) {
+    if (!selectedDate) return;
 
-    var timeDiff = new Date(todaydate).getTime() - new Date(date).getTime();
-    //var diffDays = timeDiff / (1000 * 3600 * 24);
-    var diffDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    formik.setFieldValue('NofoPendingdays', diffDays)
+    const today = new Date();
 
+    // Normalize both dates
+    selectedDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
+    const timeDiff = today.getTime() - selectedDate.getTime();
+    const diffDays = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+
+    formik.setFieldValue('NofoPendingdays', diffDays);
   }
 
   React.useEffect(() => {
@@ -407,7 +643,9 @@ console.log(futureDate);
     })
 
   }, []);
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <Formik initialValues={initialvalues}
       validationSchema={validate}
@@ -435,6 +673,7 @@ console.log(futureDate);
                       placeholder="Enter or select a date"
                       allowTextInput={true}
                       firstDayOfWeek={DayOfWeek.Sunday}
+                      maxDate={today}
                       value={formik.values.ReportDate ? new Date(formik.values.ReportDate) : undefined}
                       onSelectDate={(date) => formik.setFieldValue('ReportDate', date?.toISOString())}
                       // BLOCK non-numeric input
@@ -601,56 +840,56 @@ console.log(futureDate);
                       placeholder="Enter or select a date"
                       allowTextInput={true}
                       firstDayOfWeek={DayOfWeek.Sunday}
+                      maxDate={today}
                       value={formik.values.RecordDate ? new Date(formik.values.RecordDate) : undefined}
-                      onSelectDate={(date) => formik.setFieldValue('RecordDate', date?.toISOString())}
-                      // BLOCK non-numeric input
+
+                      onSelectDate={(date) => {
+                        if (!date) return;
+
+                        // Save date (same as old code behavior)
+                        formik.setFieldValue('RecordDate', date.toISOString());
+
+                        // OLD functionality: calculate pending days
+                        onChangeDate(date, formik);
+                      }}
+
                       onKeyDown={(e) => {
                         const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
                         if (!/[0-9\/]/.test(e.key) && !allowedKeys.includes(e.key)) {
                           e.preventDefault();
                         }
                       }}
+
                       parseDateFromString={(input) => {
                         const today = new Date();
-                        const parts = input.split(/[\/\-]/).map(p => p.trim()).filter(p => p !== "");
+                        const parts = input.split(/[\/\-]/).map(p => p.trim()).filter(Boolean);
 
-                        // Case 1: user typed only day
-                        if (parts.length === 1 && /^\d{1,2}$/.test(parts[0])) {
-                          const day = Number(parts[0]);
-                          return new Date(today.getFullYear(), today.getMonth(), day);
+                        if (parts.length === 1) {
+                          return new Date(today.getFullYear(), today.getMonth(), Number(parts[0]));
                         }
 
-                        // Case 2: user typed "day/month" 
-                        if (parts.length === 2 &&
-                            /^\d{1,2}$/.test(parts[0]) &&
-                            /^\d{1,2}$/.test(parts[1])) {
-
-                          const day = Number(parts[0]);
-                          const month = Number(parts[1]);
-                          return new Date(today.getFullYear(), month - 1, day);  
+                        if (parts.length === 2) {
+                          return new Date(today.getFullYear(), Number(parts[1]) - 1, Number(parts[0]));
                         }
 
-                        // Case 3: user typed full date 
                         if (parts.length === 3) {
                           let [day, month, year] = parts.map(Number);
-
-                          // Fix missing/invalid year → default to current year
-                          if (!year || year < 100) {
-                            year = today.getFullYear();
-                          }
-
+                          if (!year || year < 100) year = today.getFullYear();
                           return new Date(year, month - 1, day);
                         }
 
                         return undefined;
                       }}
+
                       formatDate={(date) =>
                         date
                           ? `${('0' + date.getDate()).slice(-2)}/${('0' + (date.getMonth() + 1)).slice(-2)}/${date.getFullYear()}`
                           : ''
                       }
+
                       styles={{ root: { width: '100%' } }}
                     />
+
                     {formik.errors.RecordDate && (
                       <div style={{
                         paddingTop: 0,
@@ -725,6 +964,7 @@ console.log(futureDate);
                       placeholder="Enter or select a date"
                       allowTextInput={true}
                       firstDayOfWeek={DayOfWeek.Sunday}
+                      maxDate={today}
                       value={formik.values.InvoiceDate  ? new Date(formik.values.InvoiceDate) : undefined}
                       onSelectDate={(date) => formik.setFieldValue('InvoiceDate', date?.toISOString())}
                       // BLOCK non-numeric input
@@ -974,6 +1214,7 @@ console.log(futureDate);
                     {/*className={styles.flex} <input id='txtonBehalf' type='text' {...getFieldProps(formik, 'OnBehalf')}></input> */}
                     
                     <PeoplePicker
+                      key={peoplePickerKey}
                       context={props.currentSPContext}
                       personSelectionLimit={1}
                       titleText="Name-Action to be taken by"
@@ -1013,21 +1254,50 @@ console.log(futureDate);
               <div className="row my-3">
                 <div className='d-flex btnall'>
 
-                  <PrimaryButton type='submit' style={{ width: '100px', background:'#c4291c' }} className={'pr1'} text="Submit" onClick={async () => {
+                  <PrimaryButton type='submit' style={{ width: '100px', background:'#c4291c' }} className={'pr1'} text="ADD" onClick={async () => {
                     formik.setFieldValue("condition", "Submitted");
                     formik.values.condition = "Submitted";
                     //formik.values.isDraft = false;
                     await formik.validateForm().then(async (frmResult) => {
                       //formik.isValid && 
                       if (Object.keys(frmResult).length <= 0) {
-                        await onRequestInitiate(formik.values);
+                        await addToGrid(formik.values, formik);
                       }
                     });
-                  }} value={'Submitted'} iconProps={{ iconName: 'Submit' }} />
+                  }} value={'Submitted'} iconProps={{ iconName: 'ADD' }} />
 
                   <button type="button" className="btn btn-secondary exitbtn" onClick={() => history.push('/initiatorLanding')} style={{ borderRadius: '2px', padding: '0px 30px !important', width: '100px' }}>Exit</button>
                 </div>
               </div>
+              {/* Error Message */}
+            {errorMsg && (
+              <MessageBar messageBarType={MessageBarType.error}>
+                {errorMsg}
+              </MessageBar>
+            )}
+
+            {/* GRID */}
+            {gridData.length > 0 && (
+              <Stack tokens={{ childrenGap: 15 }} styles={{ root: { marginTop: 30 } }}>
+                <DetailsList
+                  items={gridData}
+                  columns={columns}
+                  selection={selection.current}
+                  selectionMode={SelectionMode.multiple}
+                  layoutMode={DetailsListLayoutMode.fixedColumns}
+                />
+
+                <PrimaryButton
+                  text={isSubmitting ? "Submitting..." : "Submit"}
+                  onClick={submitAll}
+                  disabled={isSubmitting}
+                  styles={{
+                    root: { backgroundColor: "#a4262c", width: "fit-content", alignSelf: "center" },
+                    rootHovered: { backgroundColor: "#750b1c" }
+                  }}
+                />
+              </Stack>
+            )}
             </div>
           </div>
         </div>

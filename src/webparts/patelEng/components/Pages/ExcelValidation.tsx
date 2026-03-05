@@ -10,6 +10,7 @@ import USESPCRUD, { ISPCRUD } from '../../service/BAL/SPCRUD/spcrud';
 import { ISPCRUDOPS } from '../../service/DAL/spcrudops';
 import './ExcelValidation.scss';
 import ReasonRequestsOps from "../../service/BAL/SPCRUD/ReasonMaster";
+import { formatCellValue, parseExcelDate } from "../../service/Utils/Helper";
 
 export const GRNExcelUploadForm = (props: IPatelEngProps) => {
   const history = useHistory();
@@ -57,48 +58,44 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
 
   // ---------- Normalize Excel Headers ----------
   const normalizeRow = (rawRow: any) => {
-    const mapKey = (k: string) => k?.toString().trim().toLowerCase().replace(/[\s_]/g, "") ?? "";
+    const mapKey = (k: string) =>
+      k?.toString().trim().toLowerCase().replace(/[\s_./()=-]/g, "") ?? "";
+
     const normalized: any = {};
+
     const lookup: Record<string, string> = {
       reportdate: "ReportDate",
-        projectname: "ProjectName",
-        mirno: "MIRNO",
-        recddate: "RecdDate",
-        id: "Id",
+      projectname: "ProjectName",
+      mirno: "MIRNO",
+      recddate: "RecdDate",
+      suppliername: "SupplierName",
+      approverlevel: "ApproverLevel",
+      invoicedate: "InvoiceDate",
+      description: "Description",
+      pono: "PONo",
+      invoicevalueincludingtax: "InvoiceValueIncludingTax",
+      invoicechallanno: "InvoiceChallanNo",
+      manualmirdone: "ManualMIRdone",
+      detailedreason: "DetailedReason",
+      nosofpendingdays: "Nosofpendingdays",
+      location: "Location",
+      remarks: "Remarks",
 
-        reasonforpending: "ReasonforPending",
-        reasonforpendingid: "ReasonforPendingId",
+      plantcode: "PlantCode",
+      reasonforpending: "ReasonforPending",
 
-        suppliername: "SupplierName",
-        approverlevel: "ApproverLevel",
-        invoicedate: "InvoiceDate",
-        description: "Description",
-        pono: "PONo",
-        invoicevalueincludingtax: "InvoiceValueIncludingTax",
-        invoicechallanno: "InvoiceChallanNo",
-        manualmirdone: "ManualMIRdone",
-        detailedreason: "DetailedReason",
-        nosofpendingdays: "Nosofpendingdays",
-        location: "Location",
-        remarks: "Remarks",
-
-        plantcode: "PlantCode",
-        plantcodeid: "PlantCodeId",
-
-        nameactiontobetakenby: "NameActiontobetakenby",
-        nameactiontobetakenbyemail: "NameActiontobetakenbyEmail",
-        nameactiontobetakenbyid: "NameActiontobetakenbyId",
-
-        groupapprover: "GroupApproverId",
-        groupapproverid: "GroupApproverId"
+      nameactiontobetakenby: "NameActiontobetakenby",
+      //lastmodifiedby: "LastModifiedBy"
     };
+
     Object.keys(rawRow).forEach(k => {
-      const lk = mapKey(k);
-      const mapped = lookup[lk] ?? k;
+      const mapped = lookup[mapKey(k)] ?? k;
       normalized[mapped] = rawRow[k];
     });
+
     return normalized;
   };
+
 
   // ---------- File Input ----------
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,172 +137,140 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
     const invalid: any[] = [];
     const errorList: string[] = [];
 
-    // required fields
-    const requiredFields = [
-        "ReportDate",
-        "ProjectName",
-        "MIRNO",
-        "RecdDate",
-        "SupplierName",
-        "ApproverLevel",
-        "InvoiceDate",
-        "Description",
-        "PONo",
-        "InvoiceValueIncludingTax",
-        "Nosofpendingdays",
-        "PlantCode",
-        "ReasonforPending"
-    ];
-
-    // numeric fields
-    const numericFields = [
-        "InvoiceValueIncludingTax",
-        "Nosofpendingdays"
-    ];
+    const isDateField = (f: string) => f.toLowerCase().includes("date");
+    const isNumericField = (f: string) => {
+      const x = f.toLowerCase();
+      return x.includes("no") || x.includes("value");
+    };
+    const isValidDate = (v: any) => !isNaN(new Date(v).getTime());
 
     rows.forEach((row, index) => {
-        const rowNo = index + 1;
-        const rowErrors: string[] = [];
+      const rowNo = index + 1;
+      const rowErrors: string[] = [];
 
-        // -------- Required validation --------
-        requiredFields.forEach(f => {
-            if (!row[f] && row[f] !== 0) {
-                rowErrors.push(`Row ${rowNo}: ${f} is required`);
-            }
-        });
+      Object.keys(row).forEach(field => {
+        const value = row[field];
 
-        // -------- Plant Code lookup --------
-        if (row.PlantCode) {
-            const plant = plantCodes.find(
-                p =>
-                    p.PlantCode?.toString().trim().toLowerCase() ===
-                    row.PlantCode?.toString().trim().toLowerCase()
-            );
-            if (!plant) {
-                rowErrors.push(
-                    `Row ${rowNo}: PlantCode "${row.PlantCode}" not found in master`
-                );
-            }
+        // ---------- Required ----------
+        if (value === null || value === undefined || value === "") {
+          rowErrors.push(`Row ${rowNo}: ${field} is required`);
+          return;
         }
 
-        // -------- ReasonforPending lookup --------
-        if (row.ReasonforPending) {
-            const reason = reasons.find(
-                r =>
-                    r.Title?.trim().toLowerCase() ===
-                    row.ReasonforPending?.toString().trim().toLowerCase()
+        // ---------- Date validation ----------
+        if (isDateField(field)) {
+          const parsed = parseExcelDate(value);
+          if (!parsed) {
+            rowErrors.push(
+              `Row ${rowNo}: ${field} must be a valid date (dd/mm/yyyy)`
             );
-            if (!reason) {
-                rowErrors.push(
-                    `Row ${rowNo}: ReasonforPending "${row.ReasonforPending}" not found in master`
-                );
-            }
+          } else {
+            // normalize date for later save (optional but recommended)
+            row[field] = parsed.toISOString();
+          }
+          return;
         }
 
-        // -------- NameActiontobetakenby (people picker) --------
-        if (row.NameActiontobetakenby) {
-            const person = users.find(u =>
-                u.Title?.trim().toLowerCase() ===
-                row.NameActiontobetakenby?.toString().trim().toLowerCase()
-            );
-            if (!person) {
-                rowErrors.push(
-                    `Row ${rowNo}: NameActiontobetakenby "${row.NameActiontobetakenby}" not found`
-                );
-            }
+        // ---------- Numeric validation ----------
+        if (isNumericField(field) && isNaN(Number(value))) {
+          rowErrors.push(`Row ${rowNo}: ${field} must be numeric`);
+          return;
         }
+      });
 
-        // -------- GroupApprover (people picker) --------
-        if (row.GroupApproverId) {
-            const approver = users.find(u =>
-                u.Title?.trim().toLowerCase() ===
-                row.GroupApproverId?.toString().trim().toLowerCase()
-            );
-            if (!approver) {
-                rowErrors.push(
-                    `Row ${rowNo}: GroupApprover "${row.GroupApproverId}" not found`
-                );
-            }
-        }
-
-        // -------- Numeric fields --------
-        numericFields.forEach(f => {
-            if (row[f] !== "" && row[f] !== null && row[f] !== undefined) {
-                if (isNaN(Number(row[f]))) {
-                    rowErrors.push(`Row ${rowNo}: ${f} must be numeric`);
-                }
-            }
-        });
-
-        // -------- Final classification --------
-        if (rowErrors.length > 0) {
-            invalid.push({ rowNo, row, errors: rowErrors });
-            errorList.push(...rowErrors);
+      // ---------- Plant Code lookup ----------
+      if (row.PlantCode) {
+        if (isNaN(Number(row.PlantCode))) {
+          rowErrors.push(`Row ${rowNo}: PlantCode must be numeric`);
         } else {
-            valid.push(row);
+          const plant = plantCodes.find(
+            p =>
+              p.PlantCode?.toString().trim().toLowerCase() ===
+              row.PlantCode?.toString().trim().toLowerCase()
+          );
+          if (!plant) {
+            rowErrors.push(`Row ${rowNo}: PlantCode "${row.PlantCode}" not found`);
+          }
         }
+      }
+
+      // ---------- Reason for Pending lookup ----------
+      if (row.ReasonforPending) {
+        const reason = reasons.find(
+          r =>
+            r.Reason?.trim().toLowerCase() ===
+            row.ReasonforPending?.toString().trim().toLowerCase()
+        );
+        if (!reason) {
+          rowErrors.push(
+            `Row ${rowNo}: ReasonforPending "${row.ReasonforPending}" not found`
+          );
+        }
+      }
+
+      // -------- NameActiontobetakenby (People Picker) --------
+      if (row.NameActiontobetakenby) {
+        const person = users.find(
+          u =>
+            u.NameActiontobetakenby?.trim().toLowerCase() ===
+            row.NameActiontobetakenby?.toString().trim().toLowerCase()
+        );
+
+        if (!person) {
+          rowErrors.push(
+            `Row ${rowNo}: NameActiontobetakenby "${row.NameActiontobetakenby}" not found`
+          );
+        }
+      }
+
+      // -------- Last Modified By (Editor) --------
+      // if (row.LastModifiedBy) {
+      //   const editor = users.find(
+      //     u =>
+      //       u.Editor?.trim().toLowerCase() ===
+      //       row.LastModifiedBy?.toString().trim().toLowerCase()
+      //   );
+
+      //   if (!editor) {
+      //     rowErrors.push(
+      //       `Row ${rowNo}: LastModifiedBy "${row.LastModifiedBy}" not found`
+      //     );
+      //   }
+      // }
+
+
+      // ---------- Final classification ----------
+      if (rowErrors.length) {
+        invalid.push({ rowNo, row, errors: rowErrors });
+        errorList.push(...rowErrors);
+      } else {
+        valid.push(row);
+      }
     });
 
     setValidRows(valid);
     setInvalidRows(invalid);
     setErrors(errorList);
 
-    if (invalid.length)
-        alert(`Validation completed with ${invalid.length} invalid rows.`);
-    else
-        alert(`Validation success — ${valid.length} rows valid.`);
+    alert(
+      invalid.length
+        ? `Validation completed with ${invalid.length} invalid rows.`
+        : `Validation success — ${valid.length} rows valid.`
+    );
   };
 
 
-  // ---------- Map row to payload ----------
-  const mapExcelRowToPayload = (row: any) => {
-    const plant = plantCodes.find(p => (p.PlantCode ?? "").toString().trim() === row.PlantCode);
-    const approvers = row.GroupApproverId?.map((u:any) => users.find(user => user.Id === u.Id || user.Title === u.Title));
 
-    return {
-      ReportDate: row.ReportDate,
-      PlantCode: row.PlantCode,
-      PlantCodeId: plant?.Id ?? null,
-      ProjectName: row.ProjectName,
-      Location: row.Location,
-      Opening: row.Opening,
-      Receipt: row.Receipt,
-      ReceiptLocalfromAuthorisedPump: row.ReceiptLocalfromAuthorisedPump,
-      IssueOwnconsumption: row.IssueOwnconsumption,
-      IssueChargeable: row.IssueChargeable,
-      Closing: row.Closing,
-      Remarks: row.Remarks ?? "",
-      GroupApproverId: approvers?.Id ?? null,
-      Created: new Date(),
-      Editor: "System",
-      Modified: new Date()
-    };
-  };
-
-  // ---------- Submit Valid Rows ----------
-  const submitValidRows = async () => {
-    if (!mastersLoaded) return alert("Master data not ready.");
-    if (!validRows.length) return alert("No validated rows to submit.");
-    if (invalidRows.length && !confirm(`There are ${invalidRows.length} invalid rows. Upload only ${validRows.length}?`)) return;
-
-    setUploading(true);
-    setUploadedCount(0);
-
-    try {
-      for (let i = 0; i < validRows.length; i++) {
-        const payload = mapExcelRowToPayload(validRows[i]);
-        //await IDRRRequestsOps.createIDRRRecord(payload); 
-        await spCrudObj.insertData("WeeklyDiesel", payload, props);
-        setUploadedCount(prev => prev + 1);
-      }
-      alert(`Upload complete. ${validRows.length} rows processed.`);
-      history.push("/InitiatorLanding"); 
-    } catch (err) {
-      console.error("Error uploading rows", err);
-      alert("Upload failed. See console for details.");
-    } finally {
-      setUploading(false);
-    }
+  // ---------- Download Template ----------
+  const GetFileDownloadLink = () => {
+    const fileUrl = "https://patelengineering365.sharepoint.com/sites/GRN/Shared%20Documents/GRNTemplate.xlsx";
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.target = "_blank";
+    link.download = "ActionMasterTemplate.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // ---------- Render ----------
@@ -315,6 +280,7 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
         <h2>GRN Excel Import</h2>
         <input type="file" accept=".xls,.xlsx" onChange={handleFileChange} />
         <button onClick={readExcel} disabled={!file || !mastersLoaded || uploading}>Read Excel</button>
+        <button onClick={GetFileDownloadLink}>Download Template</button>
         {/* <button onClick={submitValidRows} disabled={uploading || validRows.length === 0}>
           {uploading ? `Uploading ${uploadedCount}/${validRows.length}` : "Upload Valid Rows"}
         </button> */}
@@ -336,9 +302,15 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
                 <tr>{Object.keys(validRows[0]).map((col,i)=><th key={i}>{col}</th>)}</tr>
               </thead>
               <tbody>
-                {validRows.map((row,i)=>
-                  <tr key={i}>{Object.keys(validRows[0]).map((col,j)=><td key={j}>{row[col]}</td>)}</tr>
-                )}
+                {validRows.map((row, i) => (
+                  <tr key={i}>
+                    {Object.keys(validRows[0]).map((col, j) => (
+                      <td key={j}>
+                        {formatCellValue(col, row[col])}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

@@ -392,7 +392,7 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
           <div className='main'>
             {/* className={styles.elementactions} */}
             <div className='element-actions'>
-              <span className={styles.btnnew} style={{ background: '#c4291c', borderColor: 'border-color' }}><Link to="/"><Icon iconName="AddTo" style={{ fontSize: '18px', paddingRight: '7px', paddingTop: '3px', marginRight: '18px' }} /> New Request</Link></span>
+              <span className={styles.btnnew} style={{ background: '#c4291c', borderColor: 'border-color' }}><Link to="/"><Icon iconName="AddTo" style={{ fontSize: '18px', paddingRight: '7px', paddingTop: '3px', marginRight: '18px' }} /> New Entry</Link></span>
             </div>
             <div className={styles.innertabs}>
 
