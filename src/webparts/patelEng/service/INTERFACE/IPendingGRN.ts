@@ -6,6 +6,7 @@ export interface IPendingGRN {
     RecdDate:any; 
     Id:any;
     ReasonforPending: any;
+    Created:any;
     // Title: any;
     //ApproverNameEMail?: string[];
     SupplierName:any;

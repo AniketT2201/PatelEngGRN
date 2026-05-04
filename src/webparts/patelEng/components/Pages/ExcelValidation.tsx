@@ -65,7 +65,7 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
 
     const lookup: Record<string, string> = {
       reportdate: "ReportDate",
-      projectname: "ProjectName",
+      //projectname: "ProjectName",
       mirno: "MIRNO",
       recddate: "RecdDate",
       suppliername: "SupplierName",
@@ -77,7 +77,7 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
       invoicechallanno: "InvoiceChallanNo",
       manualmirdone: "ManualMIRdone",
       detailedreason: "DetailedReason",
-      nosofpendingdays: "Nosofpendingdays",
+      //nosofpendingdays: "Nosofpendingdays",
       location: "Location",
       remarks: "Remarks",
 
@@ -101,12 +101,20 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null;
     setFile(f);
+    setErrors([]);
+    setValidRows([]);
+    setInvalidRows([]);
   };
 
   // ---------- Read Excel ----------
   const readExcel = () => {
     if (!file) return alert("Please select an Excel file");
     if (!mastersLoaded) return alert("Master data still loading — wait a moment.");
+
+    // 🔥 RESET previous results
+    setErrors([]);
+    setValidRows([]);
+    setInvalidRows([]);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -158,16 +166,116 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
         }
 
         // ---------- Date validation ----------
-        if (isDateField(field)) {
+        // ReportDate
+        if (field === "ReportDate") {
           const parsed = parseExcelDate(value);
           if (!parsed) {
-            rowErrors.push(
-              `Row ${rowNo}: ${field} must be a valid date (dd/mm/yyyy)`
-            );
+            rowErrors.push(`Row ${rowNo}: ReportDate must be valid (dd/mm/yyyy)`);
           } else {
-            // normalize date for later save (optional but recommended)
-            row[field] = parsed.toISOString();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const input = new Date(parsed);
+            input.setHours(0, 0, 0, 0);
+
+            if (input > today) {
+              rowErrors.push(`Row ${rowNo}: ReportDate cannot be future`);
+            } else {
+              row[field] = parsed.toISOString();
+            }
           }
+          return;
+        }
+
+        // MIRNO (no spaces, max 20 chars)
+        if (field === "MIRNO") {
+          if (value.includes(" ")) {
+            rowErrors.push(`Row ${rowNo}: MIRNO should not contain spaces`);
+          }
+          if (value.length > 20) {
+            rowErrors.push(`Row ${rowNo}: MIRNO max length is 20`);
+          }
+          return;
+        }
+
+        // RecdDate
+        if (field === "RecdDate") {
+          const parsed = parseExcelDate(value);
+          if (!parsed) {
+            rowErrors.push(`Row ${rowNo}: RecdDate must be valid`);
+          } else {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (new Date(parsed) > today) {
+              rowErrors.push(`Row ${rowNo}: RecdDate cannot be future`);
+            } else {
+              row[field] = parsed.toISOString();
+            }
+          }
+          return;
+        }
+
+        // InvoiceChallanNo (alphanumeric, max 40)
+        if (field === "InvoiceChallanNo") {
+          if (!/^[a-z0-9]+$/i.test(value)) {
+            rowErrors.push(`Row ${rowNo}: InvoiceChallanNo must be alphanumeric`);
+          }
+          if (value.length > 40) {
+            rowErrors.push(`Row ${rowNo}: InvoiceChallanNo max length is 40`);
+          }
+          return;
+        }
+
+        // InvoiceDate
+        if (field === "InvoiceDate") {
+          const parsed = parseExcelDate(value);
+          if (!parsed) {
+            rowErrors.push(`Row ${rowNo}: InvoiceDate must be valid`);
+          } else {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (new Date(parsed) > today) {
+              rowErrors.push(`Row ${rowNo}: InvoiceDate cannot be future`);
+            } else {
+              row[field] = parsed.toISOString();
+            }
+          }
+          return;
+        }
+
+        // InvoiceValueIncludingTax
+        if (field === "InvoiceValueIncludingTax") {
+          const clean = value?.toString().replace(/,/g, "").trim();
+
+          // Strict numeric validation (only digits + optional decimal)
+          const isValidNumber = /^-?\d+(\.\d+)?$/.test(clean);
+
+          if (!isValidNumber) {
+            rowErrors.push(`Row ${rowNo}: InvoiceValueIncludingTax must be a valid number`);
+          } else {
+            row[field] = parseFloat(clean); // store as number
+          }
+
+          return;
+        }
+
+        // ManualMIRdone (YES / NO only)
+        if (field === "ManualMIRdone") {
+          let normalized = value;
+
+          if (typeof value === "boolean") {
+            normalized = value ? "YES" : "NO";
+          } else {
+            normalized = value?.toString().trim().toUpperCase();
+          }
+
+          if (!["YES", "NO"].includes(normalized)) {
+            rowErrors.push(`Row ${rowNo}: ManualMIRdone must be YES or NO`);
+          } else {
+            row[field] = normalized;
+          }
+
           return;
         }
 
@@ -212,32 +320,16 @@ export const GRNExcelUploadForm = (props: IPatelEngProps) => {
       if (row.NameActiontobetakenby) {
         const person = users.find(
           u =>
-            u.NameActiontobetakenby?.trim().toLowerCase() ===
-            row.NameActiontobetakenby?.toString().trim().toLowerCase()
+            u.NameActiontobetakenby?.trim().toLowerCase() === 
+            row.NameActiontobetakenby.toString().trim().toLowerCase()
         );
 
         if (!person) {
           rowErrors.push(
             `Row ${rowNo}: NameActiontobetakenby "${row.NameActiontobetakenby}" not found`
           );
-        }
+        } 
       }
-
-      // -------- Last Modified By (Editor) --------
-      // if (row.LastModifiedBy) {
-      //   const editor = users.find(
-      //     u =>
-      //       u.Editor?.trim().toLowerCase() ===
-      //       row.LastModifiedBy?.toString().trim().toLowerCase()
-      //   );
-
-      //   if (!editor) {
-      //     rowErrors.push(
-      //       `Row ${rowNo}: LastModifiedBy "${row.LastModifiedBy}" not found`
-      //     );
-      //   }
-      // }
-
 
       // ---------- Final classification ----------
       if (rowErrors.length) {

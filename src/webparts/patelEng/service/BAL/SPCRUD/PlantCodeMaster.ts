@@ -19,7 +19,7 @@ export default function PlantCodeRequestsOps() {
             , "Location,GroupApprover"
             , "Status eq 'Active'"
           // , sorting,
-         ,{ column: 'Order0', isAscending: true },
+         ,{ column: 'ID', isAscending: true },
              props).then(results => {
                 let brr: Array<IPlantCodeMaster> = new Array<IPlantCodeMaster>();
                 results.map((item: {  Status :any;
@@ -56,7 +56,7 @@ const getPlantCodeDataAll = async (props: IPatelEngProps): Promise<IPlantCodeMas
         , "Location,GroupApprover"
         , ""
       // , sorting,
-     ,{ column: 'Order0', isAscending: true },
+     ,{ column: 'ID', isAscending: true },
          props).then(results => {
             let brr: Array<IPlantCodeMaster> = new Array<IPlantCodeMaster>();
             results.map((item: {  Status :any;

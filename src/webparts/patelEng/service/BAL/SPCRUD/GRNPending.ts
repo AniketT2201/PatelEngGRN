@@ -24,6 +24,7 @@ export default function PendingGRNRequestsOps() {
                 results.map((item: { Id: any; PlantCode: any; ReportDate: any; ProjectName: any; MIRNO: any; RecdDate: any;ReasonforPending: any; SupplierName: any; ApproverLevel: any; InvoiceDate: any; Description: any; PONo: any; InvoiceValueIncludingTax: any; InvoiceChallanNo: any;ManualMIRdone: any;
                     DetailedReason: any;
                     Nosofpendingdays:any;
+                    Created:any;
                     //NameActiontobetakenby:any;
                     Location:any;Remarks:any;NameActiontobetakenby:any;Editor:any;Modified:any;
                     NameActiontobetakenbyId:any;
@@ -33,7 +34,7 @@ export default function PendingGRNRequestsOps() {
                         Id:item.Id,
                         PlantCode: item.PlantCode.PlantCode,
                         PlantCodeId:item.PlantCode.Id,
-
+                        Created:item.Created,
                         ReportDate:item.ReportDate, 
                         ProjectName:item.ProjectName,
                         MIRNO :item.MIRNO,
@@ -85,6 +86,7 @@ const getPendingGRNRequestsDatafilter = async (ArtId: string | number,props: IPa
             results.map((item: { Id: any; PlantCode: any; ReportDate: any; ProjectName: any; MIRNO: any; RecdDate: any;ReasonforPending: any; SupplierName: any; ApproverLevel: any; InvoiceDate: any; Description: any; PONo: any; InvoiceValueIncludingTax: any; InvoiceChallanNo: any;ManualMIRdone: any;
                 DetailedReason: any;
                 Nosofpendingdays:any;
+                Created:any;
                 //NameActiontobetakenby:any;
                 Location:any;Remarks:any;NameActiontobetakenby:any;Editor:any;Modified:any;
                 NameActiontobetakenbyId:any;GroupApproverId:any;
@@ -115,7 +117,7 @@ const getPendingGRNRequestsDatafilter = async (ArtId: string | number,props: IPa
                     NameActiontobetakenbyId:item.NameActiontobetakenby.Id,
 
                     NameActiontobetakenbyEmail:item.NameActiontobetakenby !== undefined ? item.NameActiontobetakenby.EMail : '',
-
+                    Created:item.Created,
                     Location:item.Location,
                     Remarks:item.Remarks,
                     Editor:item.Editor.Title,

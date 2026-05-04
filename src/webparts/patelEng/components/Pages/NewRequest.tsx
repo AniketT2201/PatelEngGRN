@@ -923,7 +923,7 @@ export const NewRequest: React.FunctionComponent<IPatelEngProps> = (props: IPate
                   </div>
                 </div>
                 <div className='col-md-3'>
-                  <label className='col-form-label'>From invoice and challan No </label>
+                  <label className='col-form-label'>Invoice / Challan No </label>
                   <div>
                     <input type='text' id='txtInvoiceNo' className='form-control'  {...getFieldProps(formik, 'InvoiceNo')}
                       onKeyDown={(e) => {

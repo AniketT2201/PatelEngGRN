@@ -7,40 +7,19 @@ import { SearchBox } from '@fluentui/react/lib/SearchBox';
 import { Stack, IStackTokens } from '@fluentui/react/lib/Stack';
 import ReactPaginate from 'react-paginate';
 import { CSVLink } from "react-csv";
-// import styles from '../Pages/NewRequest.scss';
-// import { useHistory } from 'react-router-dom';
-// import IPatelEngProps from '../Pages/IPatelEngProps'
 import USESPCRUD, { ISPCRUD } from '../../service/BAL/SPCRUD/spcrud';
 import { Link, useHistory } from 'react-router-dom';
 import { sp } from "@pnp/sp/presets/all";
 import { IPatelEngProps } from "../IPatelEngProps";
-// import { IBillCycleMaster } from '../../service/INTERFACE/IBillCycleMaster';
-// import { ICategoryMaster } from '../../service/INTERFACE/ICategoryMaster';
-// import { IITMaster } from '../../service/INTERFACE/IITMaster';
-// import { ILocationMaster } from '../../service/INTERFACE/ILocationMaster';
-// import { IMonthMaster } from '../../service/INTERFACE/IMonthMaster';
 import { IPendingGRN } from '../../service/INTERFACE/IPendingGRN';
-// import { IReasonMaster } from '../../service/INTERFACE/IReasonMaster';
-// import { ITypeMaster } from '../../service/INTERFACE/ITypeMaster';
-// import { IYearMaster } from '../../service/INTERFACE/IYearMaster';
 import PendingGRNRequestsOps from '../../service/BAL/SPCRUD/GRNPending'
 import Utilities, { IUtilities } from '../../service/BAL/SPCRUD/utilities';
-// import Utilities from '../../service/BAL/SPCRUD/utilities';
-//import ISPCRUDOPS from '../../service/DAL/spcrudops'
-
 import { ISPCRUDOPS } from '../../service/DAL/spcrudops';
 import SPCRUDOPS from '../../service/DAL/spcrudops';
 import { IPlantCodeMaster } from '../../service/INTERFACE/IPlantCodeMaster';
 import PlantCodeRequestsOps from '../../service/BAL/SPCRUD/PlantCodeMaster'
-//import useUtilities, { IUtilities } from '../../../services/bal/utilities';
-// import USESPCRUD, { ISPCRUD } from '../../service/BAL/SPCRUD/spcrud';
 import { IReasonMaster } from '../../service/INTERFACE/IReasonMaster';
 import ReasonRequestsOps from '../../service/BAL/SPCRUD/ReasonMaster';
-// import { ISPCRUDOPS } from "../../services/DAL/spcrudops";
-// import SPCRUDOPS from "../../services/DAL/spcrudops";
-// import SPCRUDOPS from '../../service/DAL/spcrudops';
-//import useUtilities, { IUtilities } from '../../../services/bal/utilities';
-// import { ISPCRUDOPS } from "../../services/DAL/spcrudops";
 import { Label } from '@fluentui/react/lib/Label';
 import styles from '../PatelEng.module.scss';
 import Select from "react-select";
@@ -49,11 +28,6 @@ import './Landing.scss';
 //Date
 import { DatePicker } from '@fluentui/react/lib/DatePicker';
 import { DayOfWeek } from '@fluentui/react';
-
-//import ISPCRUDOPS from "../../service/DAL/spcrudops"
-// import { Link, useHistory } from 'react-router-dom';
-
-//import { Dropdown, DropdownMenuItemType, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
 import { TextField, MaskedTextField } from '@fluentui/react/lib/TextField';
 import { DefaultButton, PrimaryButton } from '@fluentui/react/lib/Button';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -63,16 +37,15 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
   const history = useHistory();
 
   const [spCrud, setSPCRUD] = React.useState<ISPCRUDOPS>();
-  // const [spCrud, setSPCRUD] = React.useState<SPCRUDOPS>();
 
   const [utility, setUtility] = React.useState<IUtilities>();
-  //const [ApproverMasterData, setApproverMasterCollData] = React.useState<IApproverMaster[]>();
   const [PendingGRNMasterData, setPendingGRNCollData] = React.useState<IPendingGRN[]>();
   const [workrequestCollFilter, setworkrequestCollFilter] = React.useState<IPendingGRN[]>();
   const [plantMasterCollData, setPlantCollData] = useState<IPlantCodeMaster[]>();
   const [ReasonCollData, setreasonCollData] = useState<IReasonMaster[]>();
 
   const [paginatedPurchaseRequestsColl, setPaginatedPurchaseRequestsColl] = React.useState<IPendingGRN[]>();
+  const [filteredData, setFilteredData] = useState<IPendingGRN[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [pageCount, setPageCount] = useState(0);
   const [itemOffset, setItemOffset] = useState(0);
@@ -109,13 +82,13 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
     const endOffset = itemOffset + itemsPerPage;
     console.log(`Loading items from ${itemOffset} to ${endOffset}`);
     if (PendingGRNMasterData !== undefined) {
-      setPaginatedPurchaseRequestsColl(PendingGRNMasterData.slice(itemOffset, endOffset));
-      setPageCount(Math.ceil(PendingGRNMasterData.length / itemsPerPage));
+      setPaginatedPurchaseRequestsColl(filteredData.slice(itemOffset, endOffset));
+      setPageCount(Math.ceil(filteredData.length / itemsPerPage));
 
     }
-  }, [itemOffset, itemsPerPage]);
+  }, [itemOffset, itemsPerPage, filteredData]);
   const handlePageClick = (event: { selected: number; }) => {
-    const newOffset = (event.selected * itemsPerPage) % PendingGRNMasterData.length;
+    const newOffset = (event.selected * itemsPerPage) % filteredData.length;
     console.log(
       `User requested page number ${event.selected}, which is offset ${newOffset}`
     );
@@ -155,7 +128,7 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
     getLoggedInSiteGroups()
     //let Currentloggedinuser = this.props.context.pageContext.legacyPageContext.userId;
     PendingGRNRequestsOps().getPendingGRNRequestsData(""
-      , { column: 'Id', isAscending: false }, props).then((PendingGRNColl) => {
+      , { column: 'Id', isAscending: true }, props).then((PendingGRNColl) => {
         let updateddatavalue = [];
 
 
@@ -170,6 +143,7 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
 
 
         setPendingGRNCollData(updateddatavalue);
+        setFilteredData(updateddatavalue);
         //setPaginatedPurchaseRequestsColl(deviationColl);
         setPaginatedPurchaseRequestsColl(updateddatavalue);
         const endOffset = itemOffset + itemsPerPage;
@@ -318,30 +292,35 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
     setPaginatedPurchaseRequestsColl(RoleCollPackage);
   }
 
-  async function onRequestInitiate(formValues: any) {
-    spCrudObj = await USESPCRUD();
-    setSPCRUD(spCrudObj);
+  const formatLocalDate = (dateStr) => {
+    const date = new Date(dateStr);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
-    let startdate = formValues.Fromdate;
-    let enddate = formValues.Enddate;
-
-    //PendingGRNMasterData.ReportDate >= startdate && PendingGRNMasterData.ReportDate <= enddate;
-    let RoleCollPackage1 = PendingGRNMasterData.filter((e) => e.ReportDate.split('T')[0] >= startdate && e.ReportDate.split('T')[0] <= enddate);
-    setPaginatedPurchaseRequestsColl(RoleCollPackage1);
-    // paginationConfig.currentPage = 1;
-    // paginationConfig.itemPerPage = 10;
-    // let iLastItem = (paginationConfig.currentPage * paginationConfig.itemPerPage);
-
-    // setPaginationConfig({
-    //     currentPage: paginationConfig.currentPage
-    //     , itemPerPage: paginationConfig.itemPerPage
-    //     , indexOfLastItem: iLastItem
-    //     , indexOfFirstItem: iLastItem - paginationConfig.itemPerPage
-    //     , totalPages: Math.ceil(RoleCollPackage.length)
-    // });
-
-
-  }
+  const onRequestInitiate = async (formValues: any) => {
+    const { Fromdate, Enddate, PlantCodeId } = formValues;
+    let filtered = PendingGRNMasterData || [];
+    // ✅ Date filter
+    if (Fromdate && Enddate) {
+      filtered = filtered.filter((e) => {
+        const reportDate = e.ReportDate.split('T')[0];
+        return reportDate >= Fromdate.split('T')[0] &&
+              reportDate <= Enddate.split('T')[0];
+      });
+    }
+    // ✅ PlantCode filter (MULTI SELECT)
+    if (PlantCodeId && PlantCodeId.length > 0) {
+      filtered = filtered.filter(item =>
+        PlantCodeId.includes(item.PlantCodeId?.toString())
+      );
+    }
+    // ✅ Final result
+    setFilteredData(filtered);
+    setItemOffset(0);
+  };
   async function onRequestReset(formValues: any) {
     window.location.reload()
 
@@ -356,7 +335,7 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
     Response: '',
     Enddate:'',
     Fromdate:'',
-    PlantCode: []
+    PlantCodeId: []
   };
 
   const headers = [
@@ -366,7 +345,7 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
     { label: "MIRNO", key: "MIRNO" },
     { label: "RecdDate", key: "RecdDate" },
     { label: "SupplierName", key: "SupplierName" },
-    { label: "Invoice/Challan No", key: "InvoiceChallanNo" },
+    { label: "Invoice / Challan No", key: "InvoiceChallanNo" },
     { label: "Invoice Date", key: "InvoiceDate" },
     { label: "Description", key: "Description" },
     { label: "P.O. NO", key: "PONo" },
@@ -381,9 +360,11 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
     { label: "Last Modified By", key: "Editor" },
     { label: "Last Modified", key: "Modified" }
 
-
-
   ];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <Formik initialValues={initialvalues}
 
@@ -403,12 +384,13 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
 
                     {<><div className='col-md-3'>
                       <div className='form-group'>
-                        <label className='col-form-label mr-2'>From date</label>
+                        <label className='col-form-label mb-0'>Report From date</label>
                         <DatePicker
                           id="txtstartdate"
                           placeholder="Enter or select a date"
                           allowTextInput={true}
                           firstDayOfWeek={DayOfWeek.Sunday}
+                          maxDate={today}
                           value={formik.values.Fromdate ? new Date(formik.values.Fromdate) : undefined}
                           onSelectDate={(date) => formik.setFieldValue('Fromdate', date?.toISOString())}
                           // BLOCK non-numeric input
@@ -463,12 +445,13 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                     </div>
                       <div className='col-md-3'>
                         <div className='form-group'>
-                          <label className='col-form-label mr-2'>End date</label>
+                          <label className='col-form-label mb-0'>Report End date</label>
                           <DatePicker
                             id="txtenddate"
                             placeholder="Enter or select a date"
                             allowTextInput={true}
                             firstDayOfWeek={DayOfWeek.Sunday}
+                            maxDate={today}
                             value={formik.values.Enddate ? new Date(formik.values.Enddate) : undefined}
                             onSelectDate={(date) => formik.setFieldValue('Enddate', date?.toISOString())}
                             // BLOCK non-numeric input
@@ -542,11 +525,11 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                             className={"plantCodeFromControl"}
                             isMulti                      
                             value={plantOptions.filter(opt =>
-                              formik.values.PlantCode.includes(opt.value)
+                              formik.values.PlantCodeId.includes(opt.value)
                             )}
                             onChange={(selected) => {
                               const values = selected ? selected.map(s => String(s.value)) : [];
-                              formik.setFieldValue("PlantCode", values);
+                              formik.setFieldValue("PlantCodeId", values);
                             
                             }}
                           />
@@ -644,7 +627,7 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                           <th>MIR No</th>
                           <th>Recd Date</th>
                           <th>Supplier Name </th>
-                          <th>Invoice and Challan No</th>
+                          <th>Invoice / Challan No</th>
                           <th>Invoice Date</th>
                           <th>Description </th>
                           <th>P.O. NO</th>
@@ -667,7 +650,9 @@ export const InitiatorLanding: React.FunctionComponent<IPatelEngProps> = (props:
                       <tbody>
 
 
-                        {paginatedPurchaseRequestsColl != undefined ? paginatedPurchaseRequestsColl.sort((a, b) => b.ReportDate - a.ReportDate).map((purchaseReqObj) =>
+                        {paginatedPurchaseRequestsColl != undefined ? paginatedPurchaseRequestsColl
+                        ?.sort((a, b) => new Date(b.ReportDate).getTime() - new Date(a.ReportDate).getTime())
+                        .map((purchaseReqObj) =>
                           <tr>
                             <td style={{ textAlign: 'center' }}>
                               {
